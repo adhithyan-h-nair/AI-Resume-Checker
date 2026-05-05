@@ -8,14 +8,30 @@ export default function Home(){
         setFile(e.target.files[0])
     }
 
-    const handleAnalyze = () => {
+    const handleAnalyze = async () => {
         if (!file) {
             setResult("Please Upload File first")
             return;
         }
+        setResult("Uploading.....")
 
-        setResult(`Analyzing ${file.name} (fake for now)`)
-    }
+        const formData = new FormData();
+        formData.append("resume", file);
+
+        try{
+            const res = await fetch("http://localhost:5000/upload",{
+                method:"POST",
+                body: formData,
+            });
+
+            const data = await res.json();
+            setResult(`${data.message} - ${data.fileName}`);
+        }
+        catch(err){
+            setResult("Upload Failed");
+            console.error(err);
+        }
+    };
 
     return(
         <main style={{padding: "2rem"}}>
