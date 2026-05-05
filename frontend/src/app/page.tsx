@@ -25,7 +25,7 @@ export default function Home(){
             });
 
             const data = await res.json();
-            setResult(`${data.message} - ${data.fileName}`);
+            setResult(data.analysis);
         }
         catch(err){
             setResult("Upload Failed");
