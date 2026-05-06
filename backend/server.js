@@ -27,26 +27,38 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
         const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
         const prompt = `
-            Analyze this resume:
+                        Analyze this resume and return ONLY valid JSON.
 
-            ${pdfData.text}
+                        Response format:
+                        {
+                        "score": number,
+                        "skills": string[],
+                        "missing_skills": string[],
+                        "suggestions": string[]
+                        }
 
-            Return STRICT JSON like this:
-            {
-            "skills": [],
-            "missing_skills": [],
-            "suggestions": [],
-            "score": number
-            }
-            `;
+                        Rules:
+                        - suggestions must be short, clean sentences
+                        - no markdown
+                        - no headings
+                        - no bullet symbols
+                        - no extra explanation
+                        - return only pure JSON
+                        - maximum 10 suggestions
+
+                        Resume:
+                        ${pdfData.text}
+                        `;
 
         const result = await model.generateContent(prompt);
         const response = await result.response;
         const text = response.text();
         const cleanedText = text.replace(/```json/g, "").replace(/```/g, "").trim();
+        const parsedAnalysis = JSON.parse(cleanedText);
+        console.log(parsedAnalysis)
         res.json({
         message: "Analysis complete",
-        analysis: cleanedText,
+        analysis: parsedAnalysis,
         });
 
     } catch (err) {
