@@ -1,15 +1,13 @@
-require("dotenv").config();
-
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+import "dotenv/config";
+import { GoogleGenerativeAI } from "@google/generative-ai"; // Use the new SDK we talked about!
+import { z } from "zod";
+import express from "express";
+import multer from "multer";
+import cors from "cors";
+import fs from "fs";
+import pdfParse from "pdf-parse-debugging-disabled";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-
-const express = require("express");
-const multer = require("multer");
-const cors = require("cors");
-const fs = require("fs");
-const pdfParse = require("pdf-parse");
-
 const app = express();
 const upload = multer({ dest: "uploads/" });
 
@@ -24,7 +22,7 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
 
         console.log("Extracted Text:", pdfData.text.slice(0, 300));
 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
         const prompt = `
                         Analyze this resume and return ONLY valid JSON.
@@ -38,6 +36,9 @@ app.post("/upload", upload.single("resume"), async (req, res) => {
                         }
 
                         Rules:
+                        - Crucial: First, evaluate if the provided text is actually a resume/CV. 
+                            - If it IS a resume, set "isResume" to true.
+                            - If it IS NOT a resume (e.g., it is a report, lorem ipsum, textbook page, code, etc.), set "isResume" to false.
                         - suggestions must be short, clean sentences
                         - no markdown
                         - no headings

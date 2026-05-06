@@ -9,6 +9,7 @@ interface AnalysisData {
   missing_skills: string[];
   suggestions: (string | { section?: string; suggestion: string })[];
   score: number;
+  isResume?: boolean;
 }
 
 export default function Home() {
@@ -21,6 +22,7 @@ export default function Home() {
     if (e.target.files && e.target.files[0]) {
       setFile(e.target.files[0]);
       setError(null);
+      setResult(null); // Clear previous result when new file selected
     }
   };
 
@@ -53,14 +55,20 @@ export default function Home() {
       }
 
       const data = await res.json();
-      // Supporting both direct object and string-encoded JSON if the backend changes
-      const analysis = typeof data.analysis === 'string' ? JSON.parse(data.analysis) : data.analysis;
+      const analysis = data.analysis;
+
+      if (analysis.isResume === false) {
+        setError("The uploaded file does not appear to be a resume. Please upload a valid resume.");
+        setResult(null);
+        return;
+      }
 
       setResult({
         skills: analysis.skills || [],
         missing_skills: analysis.missing_skills || [],
         suggestions: analysis.suggestions || [],
         score: analysis.score || 0,
+        isResume: analysis.isResume,
       });
     } catch (err) {
       console.error("Analysis failed:", err);
@@ -118,8 +126,11 @@ export default function Home() {
         )}
 
         {error && (
-          <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-center text-sm">
-            {error}
+          <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-center flex items-center justify-center gap-2">
+            <svg className="h-5 w-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <span className="text-sm font-medium">{error}</span>
           </div>
         )}
       </div>
