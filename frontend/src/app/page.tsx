@@ -2,6 +2,7 @@
 import { useState } from "react";
 import ResumeUpload from "@/components/ResumeUpload";
 import AnalysisResult from "@/components/AnalysisResult";
+import { Button } from "@/components/ui/Button";
 
 interface AnalysisData {
   skills: string[];
@@ -21,6 +22,12 @@ export default function Home() {
       setFile(e.target.files[0]);
       setError(null);
     }
+  };
+
+  const handleReset = () => {
+    setFile(null);
+    setResult(null);
+    setError(null);
   };
 
   const handleAnalyze = async () => {
@@ -46,13 +53,14 @@ export default function Home() {
       }
 
       const data = await res.json();
-      // const parsed = JSON.parse(data.analysis);
+      // Supporting both direct object and string-encoded JSON if the backend changes
+      const analysis = typeof data.analysis === 'string' ? JSON.parse(data.analysis) : data.analysis;
 
       setResult({
-        skills: data.analysis.skills || [],
-        missing_skills: data.analysis.missing_skills || [],
-        suggestions: data.analysis.suggestions || [],
-        score: data.analysis.score || 0,
+        skills: analysis.skills || [],
+        missing_skills: analysis.missing_skills || [],
+        suggestions: analysis.suggestions || [],
+        score: analysis.score || 0,
       });
     } catch (err) {
       console.error("Analysis failed:", err);
@@ -72,33 +80,46 @@ export default function Home() {
             AI Resume <span className="text-blue-600">Analyzer</span>
           </h1>
           <p className="mt-3 text-xl text-gray-500 max-w-2xl mx-auto">
-            Upload your resume and get instant feedback on your skills, missing keywords, and improvement suggestions.
+            Get instant AI feedback on your resume.
           </p>
         </header>
 
-        <ResumeUpload
-          file={file}
-          loading={loading}
-          onFileChange={handleFileChange}
-          onAnalyze={handleAnalyze}
-        />
+        {result && (
+          <>
+            <AnalysisResult result={result} />
+            <div className="text-center mt-8">
+              <Button variant="outline" onClick={handleReset} className="mx-auto cursor-pointer">
+                <svg className="h-4 w-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path>
+                </svg>
+                Upload Another Resume
+              </Button>
+            </div>
+          </>
+        )}
+
+        {!result && (
+          <div className="space-y-8">
+            <ResumeUpload
+              file={file}
+              loading={loading}
+              onFileChange={handleFileChange}
+              onAnalyze={handleAnalyze}
+            />
+            
+            {!loading && !error && (
+              <div className="text-center text-gray-400 max-w-md mx-auto">
+                <p className="text-sm italic">
+                  Result is AI generated, expect different output for the same resume, and take the result with a grain of salt.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         {error && (
           <div className="mt-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-lg text-center text-sm">
             {error}
-          </div>
-        )}
-
-        {result && <AnalysisResult result={result} />}
-
-        {!result && !loading && !error && (
-          <div className="mt-16 text-center text-gray-400">
-            <p className="text-sm">Trusted by candidates applying to top tech companies</p>
-            <div className="mt-4 flex justify-center gap-8 opacity-50 grayscale">
-              <div className="h-6 w-20 bg-gray-300 rounded animate-pulse"></div>
-              <div className="h-6 w-24 bg-gray-300 rounded animate-pulse"></div>
-              <div className="h-6 w-16 bg-gray-300 rounded animate-pulse"></div>
-            </div>
           </div>
         )}
       </div>
@@ -108,6 +129,4 @@ export default function Home() {
       </footer>
     </div>
   );
-
-
 }
